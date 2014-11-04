@@ -1,8 +1,11 @@
 function ex1(bonus)
-    if(bonus == 1)
-        ex1_bonus();
+    out_dir = 'ex1_out/';
+    
+    if bonus == 1
+        ex1_bonus(out_dir);
         return;
     end
+    
     dir = 'res/';
     names = {'00125v', '00149v', '00153v', ...
         '00351v', '00398v', '01112v'};
@@ -12,9 +15,9 @@ function ex1(bonus)
     bn = '_B.jpg';
 
     for k = 1:length(names)
-        R = readimg(dir, names{k}, rn);
-        G = readimg(dir, names{k}, gn);
-        B = readimg(dir, names{k}, bn);
+        R = imread(makepath(dir, names{k}, rn));
+        G = imread(makepath(dir, names{k}, gn));
+        B = imread(makepath(dir, names{k}, bn));
 
         s1 = ncc(R, G);
         s2 = ncc(R, B);
@@ -26,11 +29,11 @@ function ex1(bonus)
         I(:, :, 2) = G;
         I(:, :, 3) = B;
 
-        imwrite(I, strcat(names{k}, '.png'));
+        imwrite(I, makepath(out_dir, names{k}, '.png'));
     end
 end
 
-function ex1_bonus()
+function ex1_bonus(out_dir)
     dir = 'highres/';
     names = {'img1'};
 
@@ -39,9 +42,9 @@ function ex1_bonus()
     bn = '_3.jpg';
 
     for k = 1:length(names)
-        R = readimg(dir, names{k}, rn);
-        G = readimg(dir, names{k}, gn);
-        B = readimg(dir, names{k}, bn);
+        R = imread(makepath(dir, names{k}, rn));
+        G = imread(makepath(dir, names{k}, gn));
+        B = imread(makepath(dir, names{k}, bn));
 
         G = ncc_bonus(R, G, 8);
         B = ncc_bonus(R, B, 8);
@@ -49,12 +52,8 @@ function ex1_bonus()
         I(:, :, 2) = G;
         I(:, :, 3) = B;
 
-        imwrite(I, strcat(names{k}, '.png'));
+        imwrite(I, makepath(out_dir, names{k}, '.png'));
     end
-end
-
-function [I] = readimg(dir, name, ext)
-    I = imread(strcat(dir, strcat(name, ext)));
 end
 
 function [s, maxcorr] = ncc(I1, I2)
@@ -94,4 +93,8 @@ function [I2] = ncc_bonus(I1, I2, resize)
     if(resize>1)
         ncc_bonus(I1, I2, resize/2);
     end
+end
+
+function [path] = makepath(dir, name, ext)
+    path = strcat(dir, strcat(name, ext));
 end
