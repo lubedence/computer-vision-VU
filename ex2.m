@@ -1,5 +1,7 @@
 function ex2(I, K, f)
 
+MAX_ITERATIONS = 8;
+
 %u = rand(5,k).*repmat([255,255,255,size(I,1),size(I,2)]',[1 k]);
 I = im2double(I);
 N = size(I,1)*size(I,2);
@@ -8,7 +10,8 @@ u = rand(3,K);
 JOld=inf;
 J=0;
 count = 0;
-while( count<7)
+
+while(count < MAX_ITERATIONS)
     
     disp(JOld - J);
     
@@ -25,7 +28,6 @@ while( count<7)
             diff = repmat(squeeze(I(i,j,:)), [1, K]) - u;
             dist = sum(diff.^2);
             [m,arg] = min(dist);
-
             r((i-1)*size(I,2)+j,arg)=1;
             J = J + m;
             uz(:,arg) = uz(:,arg) + squeeze(I(i,j,:));
@@ -37,22 +39,21 @@ while( count<7)
     u = uz./repmat(un, [3,1]);
 end
 
+% visualize the results
 
-cluster_img = zeros(size(r,1), 3);
-for l = 1:K
-    cluster_img(r(:,l),1) = u(1,l);
-    cluster_img(r(:,l),2) = u(2,l);
-    cluster_img(r(:,l),3) = u(3,l);
+cluster_vec = zeros(size(r,1), 3);
+for k = 1:K
+    for c = 1:3
+        cluster_vec(r(:,k), c) = u(c, k);
+    end
 end
-R = reshape(cluster_img(:,1), [size(I, 1), size(I, 2)]);
-G = reshape(cluster_img(:,2), [size(I, 1), size(I, 2)]);
-B = reshape(cluster_img(:,3), [size(I, 1), size(I, 2)]);
-cluster_img = zeros(size(I,1),size(I,2),3);
-cluster_img(:,:,1) = R;
-cluster_img(:,:,2) = G;
-cluster_img(:,:,3) = B;
-figure;imshow(cluster_img);
 
-
+cluster_img = zeros(size(I));
+for c = 1:3
+    tmp = reshape(cluster_vec(:,c), [size(I,2), size(I,1)]);
+    cluster_img(:,:,c) = tmp';
+end
+figure; 
+imshow(cluster_img);
 
 end
