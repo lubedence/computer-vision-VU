@@ -1,6 +1,6 @@
 function ex2(I, K, D)
 
-MAX_ITERATIONS = 15;
+MAX_ITERATIONS = 8;
 
 %u = rand(5,k).*repmat([255,255,255,size(I,1),size(I,2)]',[1 k]);
 I = im2double(I);
