@@ -1,14 +1,14 @@
-function ex1(bonus)
+function ex1(~)
     out_dir = 'ex1_out/';
     
-    if bonus == 1
-        ex1_bonus(out_dir);
-        return;
+    if nargin < 1
+        dir = 'res/';
+        names = {'00125v', '00149v', '00153v', ...
+            '00351v', '00398v', '01112v'};
+    else
+        dir = 'highres/';
+        names = {'img1'};
     end
-    
-    dir = 'res/';
-    names = {'00125v', '00149v', '00153v', ...
-        '00351v', '00398v', '01112v'};
 
     rn = '_R.jpg';
     gn = '_G.jpg';
@@ -18,10 +18,21 @@ function ex1(bonus)
         R = imread(makepath(dir, names{k}, rn));
         G = imread(makepath(dir, names{k}, gn));
         B = imread(makepath(dir, names{k}, bn));
-
-        s1 = ncc(R, G);
-        s2 = ncc(R, B);
-
+        
+        t = cputime;
+        if nargin > 0
+            pyramidSize = 5;    %todo: calc size regarding pixel-amount
+            s1 = ncc(R, G, pyramidSize);
+            s2 = ncc(R, B, pyramidSize);
+        else
+            s1 = ncc(R, G, 1);
+            s2 = ncc(R, B, 1);
+        end
+        
+        fprintf('----------------------------------------\n');
+        fprintf('Image %d time: %d \n', k, cputime-t);
+        fprintf('----------------------------------------\n');
+        
         G = circshift(G, s1);
         B = circshift(B, s2);
 
@@ -33,67 +44,47 @@ function ex1(bonus)
     end
 end
 
-function ex1_bonus(out_dir)
-    dir = 'highres/';
-    names = {'img1'};
 
-    rn = '_1.jpg';
-    gn = '_2.jpg';
-    bn = '_3.jpg';
-
-    for k = 1:length(names)
-        R = imread(makepath(dir, names{k}, rn));
-        G = imread(makepath(dir, names{k}, gn));
-        B = imread(makepath(dir, names{k}, bn));
-
-        G = ncc_bonus(R, G, 8);
-        B = ncc_bonus(R, B, 8);
-        I = R;
-        I(:, :, 2) = G;
-        I(:, :, 3) = B;
-
-        imwrite(I, makepath(out_dir, names{k}, '.png'));
-    end
-end
-
-function [s, maxcorr] = ncc(I1, I2)
+function [s, maxcorr] = ncc(I1, I2, level)
     maxcorr = 0;
+    raster = max(ceil(15/level), 2); %size of search raster +-raster %TODO: eliminate constant 15
+    border = ceil(size(I1,2) *0.15); % 15%border of image width
     s = [0 0];
-    for i = -15:15
-        for j = -15:15
-            I2tmp = circshift(I2, [i j]);
-            corr = corr2(I1(15:(end-15), 15:(end-15)), I2tmp(15:(end-15), 15:(end-15))); % this is great
-            if corr > maxcorr
-                maxcorr = corr;
-                s = [i j];
-            end
-        end
-    end
-end
-
-function [I2] = ncc_bonus(I1, I2, resize)
-
-    I1_res = imresize(I1, [(size(I1,1)/resize) NaN]);
-    I2_res = imresize(I2, [(size(I2,1)/resize) NaN]);
-    maxcorr = 0;
-    s = [0 0];
-    for i = -2*resize:2*resize
-        for j = -2*resize:2*resize
-            I2tmp = circshift(I2_res, [i j]);
-            corr = corr2(I1_res(15:(end-15), 15:(end-15)), I2tmp(15:(end-15), 15:(end-15))); % this is great
-            if corr > maxcorr
-                maxcorr = corr;
-                s = [i j];
-            end
-        end
+    if(level > 1)
+        s = ncc(impyramid(I1, 'reduce'), impyramid(I2, 'reduce'), level-1);
     end
     
-    I2 = circshift(I2, s*resize);
-    disp(s);
-    if(resize>1)
-        ncc_bonus(I1, I2, resize/2);
+    fprintf('Level: %d\n', level);
+    fprintf('Border size: %d\n', border);
+    fprintf('Raster size(+-): %d\n', raster);
+    fprintf('Previous shift: %d\n\n', s);
+    
+    for i = -raster:raster
+        for j = -raster:raster
+            I2tmp = circshift(I2(:,:), [i j] + s*2);
+            corr = corr2(I1(border:(end-border), border:(end-border)), I2tmp(border:(end-border), border:(end-border))); % this is great
+            if corr > maxcorr
+                maxcorr = corr;
+                s = [i j];
+            end
+        end
     end
 end
+
+%function [s, maxcorr] = ncc(I1, I2)
+%    maxcorr = 0;
+%    s = [0 0];
+%    for i = -15:15
+%        for j = -15:15
+%            I2tmp = circshift(I2, [i j]);
+%            corr = corr2(I1(15:(end-15), 15:(end-15)), I2tmp(15:(end-15), 15:(end-15))); % this is great
+%            if corr > maxcorr
+%                maxcorr = corr;
+%                s = [i j];
+%            end
+%        end
+%    end
+%end
 
 function [path] = makepath(dir, name, ext)
     path = strcat(dir, strcat(name, ext));
