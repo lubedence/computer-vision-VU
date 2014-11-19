@@ -19,9 +19,9 @@ function ex1(~)
         G = imread(makepath(dir, names{k}, gn));
         B = imread(makepath(dir, names{k}, bn));
         
-        t = cputime;
-        if nargin > 0
-            pyramidSize = 5;    %todo: calc size regarding pixel-amount
+        tic;
+        if nargin > 1
+            pyramidSize = floor( log2(sqrt(length(R(:)))/200) )+1;
             s1 = ncc(R, G, pyramidSize);
             s2 = ncc(R, B, pyramidSize);
         else
@@ -30,7 +30,7 @@ function ex1(~)
         end
         
         fprintf('----------------------------------------\n');
-        fprintf('Image %d time: %d \n', k, cputime-t);
+        fprintf('Image %d time: %d \n', k, toc);
         fprintf('----------------------------------------\n');
         
         G = circshift(G, s1);
@@ -48,20 +48,22 @@ end
 function [s, maxcorr] = ncc(I1, I2, level)
     maxcorr = 0;
     raster = max(ceil(15/level), 2); %size of search raster +-raster %TODO: eliminate constant 15
+    %raster = ceil(15 / ( log2(sqrt(length(I1(:)))/200)+1));
     border = ceil(size(I1,2) *0.15); % 15%border of image width
-    s = [0 0];
+    
+    sOld = [0 0];
     if(level > 1)
-        s = ncc(impyramid(I1, 'reduce'), impyramid(I2, 'reduce'), level-1);
+        sOld = ncc(impyramid(I1, 'reduce'), impyramid(I2, 'reduce'), level-1);
     end
     
-    fprintf('Level: %d\n', level);
+    fprintf('Level: %d %dx%d\n', level, size(I1,1), size(I1,2));
     fprintf('Border size: %d\n', border);
     fprintf('Raster size(+-): %d\n', raster);
-    fprintf('Previous shift: %d\n\n', s);
-    
+    fprintf('Previous shift: %d|%d\n\n', sOld);
+     
     for i = -raster:raster
         for j = -raster:raster
-            I2tmp = circshift(I2(:,:), [i j] + s*2);
+            I2tmp = circshift(I2(:,:), [i j] + sOld*2);
             corr = corr2(I1(border:(end-border), border:(end-border)), I2tmp(border:(end-border), border:(end-border))); % this is great
             if corr > maxcorr
                 maxcorr = corr;
@@ -69,6 +71,7 @@ function [s, maxcorr] = ncc(I1, I2, level)
             end
         end
     end
+    s = s + sOld*2;
 end
 
 %function [s, maxcorr] = ncc(I1, I2)
