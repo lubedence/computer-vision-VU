@@ -1,13 +1,13 @@
-function ex1(~)
+function ex1(with_pyramid, highres)
     out_dir = 'ex1_out/';
     
-    if nargin < 1
+    if highres
+        dir = 'highres/';
+        names = {'img1'};
+    else
         dir = 'res/';
         names = {'00125v', '00149v', '00153v', ...
             '00351v', '00398v', '01112v'};
-    else
-        dir = 'highres/';
-        names = {'img1'};
     end
 
     rn = '_R.jpg';
@@ -20,7 +20,7 @@ function ex1(~)
         B = imread(makepath(dir, names{k}, bn));
         
         tic;
-        if nargin > 1
+        if with_pyramid
             pyramidSize = floor( log2(sqrt(length(R(:)))/200) )+1;
             s1 = ncc(R, G, pyramidSize);
             s2 = ncc(R, B, pyramidSize);
