@@ -32,7 +32,6 @@ end
 
 disp('maxima');
 
-n = 1;
 for lvl = 2:(levels-1)
     for i = 2:(size(I,1)-1)
         for j = 2:(size(I,2)-1)
@@ -49,8 +48,6 @@ for lvl = 2:(levels-1)
                 if current_px > Result(i,j,1)
                     Result(i,j,1) = current_px;
                     Result(i,j,2) = sigma_0 * k^lvl * sqrt(2);
-                    %results(n,1:4) = [i,j,sigma_0 * k^lvl * sqrt(2),current_px];
-                    %n = n + 1;
                 end
                 
             end
@@ -58,14 +55,13 @@ for lvl = 2:(levels-1)
     end
 end
 
-% Vis = zeros(size(I,1), size(I,2), 3);
-% Vis(:,:,1) = I;
-% Vis(:,:,2) = Result;
-% figure; imshow(Vis);
-% figure; imshow(Result);
+% visualize
 [cy, cx] = find(Result(:,:,2));
-%radii = Result(sub2ind(size(Result(:,:,2)), cx, cy), 2);
-%radii = Result(find(Result(:,:,2)), 2);
+Result2 = Result(:,:,2);
+%radii = Result2(find(Result2));
+radii = Result2(sub2ind(size(Result2), cy, cx));
+fig = figure;
 show_all_circles(I, cx, cy, radii);
+saveas(fig, strcat(out_dir, filename));
 
 end
