@@ -22,13 +22,16 @@ J = 0;
 JOld = inf; %J from previous iteration
 count = 0;
 
-Inew = I;
-%extend 3th dimension if spatial data is enabled
+data = zeros(N, D);
+data(:, 1) = reshape(I(:,:,1)', [N 1]);
+data(:, 2) = reshape(I(:,:,2)', [N 1]);
+data(:, 3) = reshape(I(:,:,3)', [N 1]);
+[is, js] = find(ones(size(I(:,:,1))));
 if D == 5
-    Inew(:,:,4) = repmat((1:size(I,1))' ./ size(I,1), [1 size(I,2)]);
-    Inew(:,:,5) = repmat((1:size(I,2)) ./ size(I,2), [size(I,1) 1]);
+    data(:, 4) = is ./ size(I, 1);
+    data(:, 5) = js ./ size(I, 2);
 end
-Inew = repmat(Inew, [1 1 1 K]); %generate 4th dimension depending on given cluster amount
+data = repmat(data, [1 1 K]);
 
 while count < MAX_ITERATIONS %could be removed
     if abs(J - JOld) < THRESHOLD
@@ -40,34 +43,29 @@ while count < MAX_ITERATIONS %could be removed
     JOld = J;
     
     % calculate differences between pixels and cluster-centers 
-    diffs = ones(size(I,1), size(I,2), D, K);
+    diffs = zeros(N,D,K);
+    dists = zeros(N,K);
     for k = 1:K
-        diffs(:,:,:,k) = Inew(:,:,:,k) - repmat(reshape(u(:,k), [1 1 D]), [size(I,1) size(I,2) 1]);
+        diffs(:,:,k) = data(:,:,k) - repmat(u(:,k)', [N, 1]); % difference
+        dists(:,k) = sum(diffs(:,:,k).^2, 2); % distance
     end
-    % calculate distances between pixels and cluster-centroids and search for
-    % min distance
-    dists = squeeze(sum(diffs.^2, 3)); % dists size is [size(I,1) size(I,2) K]
-    [ms, args] = min(dists, [], 3); % mins of distances
-    ks = reshape(args', [1 N]);
+    [mins, k_mins] = min(dists, [], 2); % search for min distances
     
     % calculate J
-    J = sum(sum(ms));
+    J = sum(sum(mins));
     fprintf('JOld - J = %d\n', JOld - J);
     
     % construct r (each pixel gets assigned to the cluster with the lowest
     % distance)
     r = false(N, K);
-    r_tmp = full(ind2vec(ks))';
+    r_tmp = full(ind2vec(k_mins'))';
     r(1:N, 1:size(r_tmp,2)) = r_tmp;
     
     % calculate u (new cluster centroids)
     for k = 1:K
-        xs = zeros(N,D);
-        for d = 1:D
-            xs(:,d) = reshape(Inew(:,:,d,k)', [N, 1]);
-        end
+        xs = data(:,:,k);
         xs(~r(:,k), :) = 0;
-        u(:,k) = sum(xs) ./ sum(r(:,k));
+        u(:,k) = sum(xs(:,:)) ./ sum(r(:,k));
         %fprintf('cluster k: %d\n', sum(r(:,k)));
     end
     
