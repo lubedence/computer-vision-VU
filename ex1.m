@@ -19,8 +19,10 @@ function ex1(with_pyramid, highres)
         G = imread(makepath(dir, names{k}, gn));
         B = imread(makepath(dir, names{k}, bn));
         
-        tic;
+        tic; %stop time
         if with_pyramid
+            %get numbers of pyramid levels, logarithmic function - linear
+            %would generate too many for large images.
             pyramidSize = floor( log2(sqrt(length(R(:)))/200) )+1;
             s1 = ncc(R, G, pyramidSize);
             s2 = ncc(R, B, pyramidSize);
@@ -29,6 +31,7 @@ function ex1(with_pyramid, highres)
             s2 = ncc(R, B, 1);
         end
         
+        %time needed for the shift computation of both channels
         fprintf('----------------------------------------\n');
         fprintf('Image %d time: %d \n', k, toc);
         fprintf('----------------------------------------\n');
@@ -47,9 +50,14 @@ end
 
 function [s, maxcorr] = ncc(I1, I2, level)
     maxcorr = 0;
-    raster = max(ceil(15/level), 2); %size of search raster +-raster %TODO: eliminate constant 15
+    %linear function for raster-size depending on pyramid level
+    raster = max(ceil(15/level), 2); %size of search raster +-raster
+    
+    %log function for raster-size depending on pyramid level
     %raster = ceil(15 / ( log2(sqrt(length(I1(:)))/200)+1));
-    border = ceil(size(I1,2) *0.15); % 15%border of image width
+    
+    %border = 15% of image width. Reduces computation + ignores film artefacts
+    border = ceil(size(I1,2) *0.15); 
     
     sOld = [0 0];
     if(level > 1)
@@ -60,11 +68,12 @@ function [s, maxcorr] = ncc(I1, I2, level)
     fprintf('Border size: %d\n', border);
     fprintf('Raster size(+-): %d\n', raster);
     fprintf('Previous shift: %d|%d\n\n', sOld);
-     
+    
+    %compute NCC for every pixel(i,j) in the search raster 
     for i = -raster:raster
         for j = -raster:raster
-            I2tmp = circshift(I2(:,:), [i j] + sOld*2);
-            corr = corr2(I1(border:(end-border), border:(end-border)), I2tmp(border:(end-border), border:(end-border))); % this is great
+            I2tmp = circshift(I2(:,:), [i j] + sOld*2); %shift channel by [i j] and if working with pyramids, by the shift of the previous level (*2 needed for the 2 times larger image)
+            corr = corr2(I1(border:(end-border), border:(end-border)), I2tmp(border:(end-border), border:(end-border))); % ignore image border 
             if corr > maxcorr
                 maxcorr = corr;
                 s = [i j];
@@ -73,21 +82,6 @@ function [s, maxcorr] = ncc(I1, I2, level)
     end
     s = s + sOld*2;
 end
-
-%function [s, maxcorr] = ncc(I1, I2)
-%    maxcorr = 0;
-%    s = [0 0];
-%    for i = -15:15
-%        for j = -15:15
-%            I2tmp = circshift(I2, [i j]);
-%            corr = corr2(I1(15:(end-15), 15:(end-15)), I2tmp(15:(end-15), 15:(end-15))); % this is great
-%            if corr > maxcorr
-%                maxcorr = corr;
-%                s = [i j];
-%            end
-%        end
-%    end
-%end
 
 function [path] = makepath(dir, name, ext)
     path = strcat(dir, strcat(name, ext));
