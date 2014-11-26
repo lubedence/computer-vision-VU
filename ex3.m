@@ -32,8 +32,6 @@ for lvl = 1:levels
     % calculate the maxima of all 3x3 windows of the image
     scale_space_max(:,:,lvl) = imdilate(scale_space(:,:,lvl), ones(3,3));
     %scale_space_max(:,:,lvl) = ordfilt2(scale_space(:,:,lvl),9,ones(3,3));
-    
-    lvl
 end
 
 disp('maxima');
