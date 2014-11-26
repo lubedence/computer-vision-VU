@@ -4,8 +4,8 @@
 % write_out ... write to file (optional)
 function ex2(filename, K, D, write_out)
 
-MAX_ITERATIONS = 20;
-THRESHOLD = 1;
+MAX_ITERATIONS = 20; % just to make sure, that the algorithm terminates
+THRESHOLD = 1; %used for the difference between J and JOld (previous iteration)
 in_dir = 'res/';
 out_dir = 'ex2_out/';
 
@@ -19,30 +19,33 @@ end
 u = rand(D,K); % step 1
     
 J = 0;
-JOld = inf;
+JOld = inf; %J from previous iteration
 count = 0;
 
 Inew = I;
+%extend 3th dimension if spatial data is enabled
 if D == 5
     Inew(:,:,4) = repmat((1:size(I,1))' ./ size(I,1), [1 size(I,2)]);
     Inew(:,:,5) = repmat((1:size(I,2)) ./ size(I,2), [size(I,1) 1]);
 end
-Inew = repmat(Inew, [1 1 1 K]);
+Inew = repmat(Inew, [1 1 1 K]); %generate 4th dimension depending on given cluster amount
 
-while count < MAX_ITERATIONS
+while count < MAX_ITERATIONS %could be removed
     if abs(J - JOld) < THRESHOLD
-        disp('J - JOld < THRESHOLD');
+        %disp('J - JOld < THRESHOLD');
         break;
     end
     
     count = count + 1;
     JOld = J;
     
-    % calculate distances
+    % calculate differences between pixels and cluster-centers 
     diffs = ones(size(I,1), size(I,2), D, K);
     for k = 1:K
         diffs(:,:,:,k) = Inew(:,:,:,k) - repmat(reshape(u(:,k), [1 1 D]), [size(I,1) size(I,2) 1]);
     end
+    % calculate distances between pixels and cluster-centroids and search for
+    % min distance
     dists = squeeze(sum(diffs.^2, 3)); % dists size is [size(I,1) size(I,2) K]
     [ms, args] = min(dists, [], 3); % mins of distances
     ks = reshape(args', [1 N]);
@@ -51,12 +54,13 @@ while count < MAX_ITERATIONS
     J = sum(sum(ms));
     fprintf('JOld - J = %d\n', JOld - J);
     
-    % construct r
+    % construct r (each pixel gets assigned to the cluster with the lowest
+    % distance)
     r = false(N, K);
     r_tmp = full(ind2vec(ks))';
     r(1:N, 1:size(r_tmp,2)) = r_tmp;
     
-    % calculate u
+    % calculate u (new cluster centroids)
     for k = 1:K
         xs = zeros(N,D);
         for d = 1:D
@@ -103,6 +107,7 @@ function visualize()
         end
     end
 
+    %color all pixels of a cluster with their mean color values
     cluster_img = zeros(size(I));
     for c = 1:3
         tmp = reshape(cluster_vec(:,c), [size(I,2), size(I,1)]);
