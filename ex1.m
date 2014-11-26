@@ -1,3 +1,5 @@
+% with_pyramid ... enable pyramid mode
+% highres ... work with high resolution files
 function ex1(with_pyramid, highres)
     out_dir = 'ex1_out/';
     
