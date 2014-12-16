@@ -16,9 +16,13 @@ for i=1:imagesCount
    images{i} = currentImage;
 end
 
-firstImageGS =  rgb2gray(images{1});
-points = vl_sift(single(firstImageGS));
-imshow(firstImageGS);
-vl_plotframe(points);
+    function stitchA()
+        points = vl_sift(single(rgb2gray(images{1})));
+        imshow(images{1});
+        vl_plotframe(points);
+    end
+
+stitchA();
+
 end
 
