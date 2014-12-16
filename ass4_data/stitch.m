@@ -24,10 +24,10 @@ end
 
 
     function stitchB(img1, img2)
-        pointsImg1 = vl_sift(single(rgb2gray(img1)));
-        pointsImg2 = vl_sift(single(rgb2gray(img2)));
-        matches = vl_ubcmatch(pointsImg1, pointsImg2);
-        match_plot(img1, img2, pointsImg1, pointsImg2);
+        [pointsImg1, descImg1] = vl_sift(single(rgb2gray(img1)));
+        [pointsImg2, descImg2] = vl_sift(single(rgb2gray(img2)));
+        matches = vl_ubcmatch(descImg1, descImg2);
+        %match_plot(img1, img2, ???, ???);
     end
 
 %stitchA();
