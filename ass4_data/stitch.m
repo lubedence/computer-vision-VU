@@ -22,7 +22,17 @@ end
         vl_plotframe(points);
     end
 
-stitchA();
+
+    function stitchB(img1, img2)
+        pointsImg1 = vl_sift(single(rgb2gray(img1)));
+        pointsImg2 = vl_sift(single(rgb2gray(img2)));
+        matches = vl_ubcmatch(pointsImg1, pointsImg2);
+        match_plot(img1, img2, pointsImg1, pointsImg2);
+    end
+
+%stitchA();
+
+stitchB(images{1}, images{2});
 
 end
 
