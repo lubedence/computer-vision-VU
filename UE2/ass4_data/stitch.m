@@ -59,9 +59,9 @@ end
         %figure; imshow(B);
     end
 
-stitchA();
+%stitchA();
 
-imreg(images{1}, images{2});
+%imreg(images{1}, images{2});
 
 % stitching
 
@@ -71,23 +71,43 @@ for i = 1:(imagesCount - 1)
     H{i, i+1} = imreg(left, right);
 end
 
-% if REF > 2
-%     ref = images{REF};
-%     for i = 1:imagesCount
-%         if H{i, REF} == []
-%             hm = eye(3);
-%             for j = REF:-1:2
-%                 hm = hm * H{j - 1, j}.tdata.T;
-%             end
-%             H{i, REF} = 
-%         end
-%     end
-% end
+if REF > 2
+    curr = 2;
+     for i = 1:(REF-2)
+              hTempLeft = H{REF-curr+1, REF}.tdata.T .* H{REF-curr, REF-curr+1}.tdata.T;
+              H{REF-curr, REF} = maketform('projective', hTempLeft);
+              
+              if (REF+curr) <= imagesCount
+                hTempRight = H{REF, REF+curr-1}.tdata.T .* H{REF+curr-1, REF+curr}.tdata.T;
+                H{REF, REF+curr} = maketform('projective', hTempRight);
+              end
+              
+              curr = curr +1;
+     end
+ end
 
-% H{1,3} = H{2,3};
-% H{1,3}.tdata.T = H{2,3}.tdata.T * H{1,2}.tdata.T;
-% H{1,3}.tdata.Tinv = H{2,3}.tdata.Tinv * H{1,2}.tdata.Tinv;
-H{1,3} = maketform('composite', H{2,3}.tdata.T, H{1,2}.tdata.T);
-H{3,5} = maketform('composite', H{4,5}.tdata.T, H{3,4}.tdata.T);
+%H{1,3} = maketform('composite', H{2,3}.tdata.T, H{1,2}.tdata.T);
+%H{3,5} = maketform('composite', H{4,5}.tdata.T, H{3,4}.tdata.T);
+
+xMin = inf;
+yMin = inf;
+xMax = 0;
+yMax = 0;
+
+for i = 1:imagesCount
+    
+    [height, width] = size(images{i});
+    
+    if i<REF
+        outbounds = findbounds(H{i, REF},[0 0; height width]); %not sure if [0 0; height width] is correct
+    elseif i>REF
+        outbounds = findbounds(H{REF, i},[0 0; height width]); %not sure if [0 0; height width] is correct
+    else
+        continue;
+    end
+    
+    %todo: compute the minimum x,minimum y, maximum x, and maximum y coordinates 
+    
+end
         
 end
