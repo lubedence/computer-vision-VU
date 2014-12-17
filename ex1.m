@@ -4,7 +4,7 @@ function ex1(with_pyramid, highres)
     out_dir = 'ex1_out/';
     
     if highres
-        dir = 'highres/';
+        dir = 'res/highres/';
         names = {'img1'};
     else
         dir = 'res/';

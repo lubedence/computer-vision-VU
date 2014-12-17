@@ -1,10 +1,10 @@
-% I ... image
+% filename ... filename without directory
 % K ... number of clusters
 % D ... number of features (3 or 5)
 % write_out ... write to file (optional)
 function ex2(filename, K, D, write_out)
 
-MAX_ITERATIONS = 20; % just to make sure, that the algorithm terminates
+MAX_ITERATIONS = 30; 
 THRESHOLD = 1; %used for the difference between J and JOld (previous iteration)
 in_dir = 'res/';
 out_dir = 'ex2_out/';
