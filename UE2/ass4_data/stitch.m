@@ -74,20 +74,14 @@ end
 if REF > 2
     curr = 2;
      for i = 1:(REF-2)
-              hTempLeft = H{REF-curr+1, REF}.tdata.T .* H{REF-curr, REF-curr+1}.tdata.T;
-              H{REF-curr, REF} = maketform('projective', hTempLeft);
-              
+              H{REF-curr, REF} = maketform('composite', H{REF-curr+1, REF}, H{REF-curr, REF-curr+1});
               if (REF+curr) <= imagesCount
-                hTempRight = H{REF, REF+curr-1}.tdata.T .* H{REF+curr-1, REF+curr}.tdata.T;
-                H{REF, REF+curr} = maketform('projective', hTempRight);
+              H{REF, REF+curr} = maketform('composite', H{REF, REF+curr-1}, H{REF+curr-1, REF+curr});
               end
               
               curr = curr +1;
      end
- end
-
-%H{1,3} = maketform('composite', H{2,3}.tdata.T, H{1,2}.tdata.T);
-%H{3,5} = maketform('composite', H{4,5}.tdata.T, H{3,4}.tdata.T);
+end
 
 xMin = inf;
 yMin = inf;
@@ -99,14 +93,43 @@ for i = 1:imagesCount
     [height, width] = size(images{i});
     
     if i<REF
-        outbounds = findbounds(H{i, REF},[0 0; height width]); %not sure if [0 0; height width] is correct
+        outbounds = findbounds(H{i, REF},[1 1; height width]);
     elseif i>REF
-        outbounds = findbounds(H{REF, i},[0 0; height width]); %not sure if [0 0; height width] is correct
+        outbounds = findbounds(H{REF, i},[1 1; height width]);
     else
         continue;
     end
     
-    %todo: compute the minimum x,minimum y, maximum x, and maximum y coordinates 
+    if outbounds(1,2) < xMin
+        xMin = outbounds(1,2);
+    end
+    
+    if outbounds(1,1) < yMin
+        yMin = outbounds(1,1);
+    end
+    
+    if outbounds(2,2) > xMax
+        xMax = outbounds(2,2);
+    end
+    
+    if outbounds(2,1) > yMax
+        yMax = outbounds(2,1);
+    end
+    
+end
+
+
+for i = 1:imagesCount
+    
+    if i<REF
+         B = imtransform(images{i}, H{i, REF}, 'XData', [xMin xMax], 'YData', [yMin yMax]);
+    elseif i>REF
+         B = imtransform(images{i}, H{REF, i}, 'XData', [xMin xMax], 'YData', [yMin yMax]);
+    else
+        B = imtransform(images{i},  maketform('projective',eye(3)), 'XData', [xMin xMax], 'YData', [yMin yMax]);
+    end
+    
+   figure;imshow(B);
     
 end
         
