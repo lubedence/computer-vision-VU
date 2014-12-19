@@ -32,7 +32,9 @@ end
         matches = vl_ubcmatch(descImg1, descImg2);
         points1 = pointsImg1(1:2, matches(1,:));
         points2 = pointsImg2(1:2, matches(2,:));
-        match_plot(im2double(img1), im2double(img2), points1', points2');
+        
+        %visualize
+        %match_plot(im2double(img1), im2double(img2), points1', points2');
         
         best_inliers_ind = [];
         for n = 1:N
@@ -54,83 +56,102 @@ end
         end
         
         t = cp2tform(points1(:, best_inliers_ind)', points2(:, best_inliers_ind)', 'projective');
-        B = imtransform(img1, t, 'XData', [1 size(img2,2)], 'YData', [1 size(img2,1)], 'XYScale', [1 1]);
+        
+        %B = imtransform(img1, t, 'XData', [1 size(img2,2)], 'YData', [1 size(img2,1)], 'XYScale', [1 1]);
         %B(B == 0) = img2(B == 0);
         %figure; imshow(B);
     end
 
+%just for the theoretical part
 %stitchA();
-
 %imreg(images{1}, images{2});
+
+
 
 % stitching
 
 for i = 1:(imagesCount - 1)
     left = images{i};
     right = images{i + 1};
-    H{i, i+1} = imreg(left, right);
+    if i<REF
+        H{i, i+1} = imreg(left, right);
+    else
+        H{i, i+1} = fliptform(imreg(left, right));
+    end
 end
 
+% make composite transformation matrices, if needed(more than 3 pics)
 if REF > 2
     curr = 2;
      for i = 1:(REF-2)
               H{REF-curr, REF} = maketform('composite', H{REF-curr+1, REF}, H{REF-curr, REF-curr+1});
+             
               if (REF+curr) <= imagesCount
-              H{REF, REF+curr} = maketform('composite', H{REF, REF+curr-1}, H{REF+curr-1, REF+curr});
+                H{REF, REF+curr} = maketform('composite', H{REF, REF+curr-1}, H{REF+curr-1, REF+curr});
               end
               
               curr = curr +1;
      end
 end
 
-xMin = inf;
-yMin = inf;
-xMax = 0;
-yMax = 0;
+
+% estimate final panorama size
+xMin = 1;
+yMin = 1;
+xMax = size(images{REF}, 2);
+yMax = size(images{REF}, 1);
 
 for i = 1:imagesCount
     
-    [height, width] = size(images{i});
+    [height, width, ~] = size(images{i});
     
     if i<REF
-        outbounds = findbounds(H{i, REF},[1 1; height width]);
+        outbounds = findbounds(H{i, REF},[1 height; width 1]);
     elseif i>REF
-        outbounds = findbounds(H{REF, i},[1 1; height width]);
+        outbounds = findbounds(H{REF, i},[1 height;width 1]);
     else
         continue;
     end
     
-    if outbounds(1,2) < xMin
-        xMin = outbounds(1,2);
+    if outbounds(1,1) < xMin
+        xMin = outbounds(1,1);
     end
     
-    if outbounds(1,1) < yMin
-        yMin = outbounds(1,1);
+    if outbounds(1,2) < yMin
+        yMin = outbounds(1,2);
     end
     
-    if outbounds(2,2) > xMax
-        xMax = outbounds(2,2);
+    if outbounds(2,1) > xMax
+        xMax = outbounds(2,1);
     end
     
-    if outbounds(2,1) > yMax
-        yMax = outbounds(2,1);
+    if outbounds(2,2) > yMax
+        yMax = outbounds(2,2);
     end
     
 end
 
 
+%transform images
 for i = 1:imagesCount
     
     if i<REF
-         B = imtransform(images{i}, H{i, REF}, 'XData', [xMin xMax], 'YData', [yMin yMax]);
+         B = imtransform(images{i}, H{i, REF}, 'XData', [xMin xMax], 'YData', [yMin yMax], 'XYScale', [1 1]);
     elseif i>REF
-         B = imtransform(images{i}, H{REF, i}, 'XData', [xMin xMax], 'YData', [yMin yMax]);
+         B = imtransform(images{i}, H{REF, i}, 'XData', [xMin xMax], 'YData', [yMin yMax], 'XYScale', [1 1]);
     else
-        B = imtransform(images{i},  maketform('projective',eye(3)), 'XData', [xMin xMax], 'YData', [yMin yMax]);
+        B = imtransform(images{i},  maketform('projective',eye(3)), 'XData', [xMin xMax], 'YData', [yMin yMax], 'XYScale', [1 1]);
     end
-    
-   figure;imshow(B);
-    
+
+
+    if i == 1
+        test = B;
+    else
+        test(B ~= 0) = B(B~=0);
+    end
 end
         
+figure;imshow(test);
+
+
 end
