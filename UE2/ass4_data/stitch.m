@@ -24,6 +24,11 @@ for i=1:imagesCount
    ac = zeros(h, w);
    ac(h/2,w/2) = 1;
    ac  =  bwdist(ac);
+   if h>w
+        ac(ac > ac(h/2,1)) = ac(h/2,1);
+   else
+        ac(ac > ac(w/2,1)) = ac(w/2,1);
+   end
    alphaChannel{i} =  ((ac ./ max(max(ac))) - 1) .* -1;
    images{i} = currentImage;
 end
@@ -154,19 +159,12 @@ for i = 1:imagesCount
         alphaChannel{i} = imtransform(alphaChannel{i},  maketform('projective',eye(3)), 'XData', [xMin xMax], 'YData', [yMin yMax], 'XYScale', [1 1]);
     end
 
-    
-
-    %if i == 1
-    %    test = B;
-    %else
-     %   test(B ~= 0) = B(B~=0);
-    %end
 end
 
 h = size(images{1},1);
 w = size(images{1},2);
 
-output = uint16(zeros(h,w,3));
+output = double(zeros(h,w,3));
 alphaChannelSum = zeros(h,w);
 for i = 1:h
     for j = 1:w
@@ -195,16 +193,16 @@ for i = 1:h
 end
 
 for i = 1:imagesCount
-    output(:,:,1) = output(:,:,1) + uint16(double(images{i}(:,:,1)) .* alphaChannel{i});
-    output(:,:,2) = output(:,:,2) + uint16(double(images{i}(:,:,2)) .* alphaChannel{i});
-    output(:,:,3) = output(:,:,3) + uint16(double(images{i}(:,:,3)) .* alphaChannel{i});
+    output(:,:,1) = output(:,:,1) + double(images{i}(:,:,1)) .* alphaChannel{i};
+    output(:,:,2) = output(:,:,2) + double(images{i}(:,:,2)) .* alphaChannel{i};
+    output(:,:,3) = output(:,:,3) + double(images{i}(:,:,3)) .* alphaChannel{i};
 end
 
-output(:,:,1) = output(:,:,1) ./ uint16(alphaChannelSum);
-output(:,:,2) = output(:,:,2) ./ uint16(alphaChannelSum);
-output(:,:,3) = output(:,:,3) ./ uint16(alphaChannelSum);
+output(:,:,1) = output(:,:,1) ./ alphaChannelSum;
+output(:,:,2) = output(:,:,2) ./ alphaChannelSum;
+output(:,:,3) = output(:,:,3) ./ alphaChannelSum;
        
-figure;imshow(output);
+figure;imshow(uint8(output));
 
 
 end
