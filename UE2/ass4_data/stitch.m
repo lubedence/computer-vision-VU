@@ -169,18 +169,18 @@ alphaChannelSum = zeros(h,w);
 for i = 1:h
     for j = 1:w
         for k = 1:(imagesCount)
-            if(alphaChannel{k}(i,j) ~= 0)
+            if(images{k}(i,j) ~= 0)
                 
                 if(k == imagesCount)
-                   if(alphaChannel{k-1}(i,j) == 0)
+                   if(images{k-1}(i,j) == 0)
                         alphaChannel{k}(i,j) = 1;
                     end
                 elseif(k == 1)
-                    if(alphaChannel{k+1}(i,j) == 0)
+                    if(images{k+1}(i,j) == 0)
                         alphaChannel{k}(i,j) = 1;
                     end
                 else
-                    if(alphaChannel{k-1}(i,j) == 0 && alphaChannel{k+1}(i,j) == 0)
+                    if(images{k-1}(i,j) == 0 && images{k+1}(i,j) == 0)
                         alphaChannel{k}(i,j) = 1;
                     end
                 end 
