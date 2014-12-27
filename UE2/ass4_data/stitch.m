@@ -22,14 +22,12 @@ for i=1:imagesCount
    h = size(currentImage,1);
    w = size(currentImage,2);
    ac = zeros(h, w);
-   ac(h/2,w/2) = 1;
+   ac(1,:) = 1;
+   ac(:,1) = 1;
+   ac(h,:) = 1;
+   ac(:,w) = 1;
    ac  =  bwdist(ac);
-   if h>w
-        ac(ac > ac(h/2,1)) = ac(h/2,1);
-   else
-        ac(ac > ac(w/2,1)) = ac(w/2,1);
-   end
-   alphaChannel{i} =  ((ac ./ max(max(ac))) - 1) .* -1;
+   alphaChannel{i} =  ac ./ max(max(ac));
    images{i} = currentImage;
 end
 
@@ -161,26 +159,23 @@ for i = 1:imagesCount
 
 end
 
-h = size(images{1},1);
-w = size(images{1},2);
-
-output = double(zeros(h,w,3));
+%create final alpha mask
+%todo: it's very slow...
+h = size(images{1},1); %Todo: adapt for different image sizes
+w = size(images{1},2); %Todo: adapt for different image sizes
 alphaChannelSum = zeros(h,w);
 for i = 1:h
     for j = 1:w
         for k = 1:(imagesCount)
-            if(images{k}(i,j) ~= 0)
+            if(alphaChannel{k}(i,j) ~= 0)
                 
-                if(k == imagesCount)
-                   if(images{k-1}(i,j) == 0)
+                if(k ~= imagesCount)
+                    if(alphaChannel{k+1}(i,j) == 0)
                         alphaChannel{k}(i,j) = 1;
                     end
-                elseif(k == 1)
-                    if(images{k+1}(i,j) == 0)
-                        alphaChannel{k}(i,j) = 1;
-                    end
-                else
-                    if(images{k-1}(i,j) == 0 && images{k+1}(i,j) == 0)
+                   
+                elseif(k ~= 1)
+                    if(alphaChannel{k-1}(i,j) == 0)
                         alphaChannel{k}(i,j) = 1;
                     end
                 end 
@@ -192,6 +187,7 @@ for i = 1:h
     end
 end
 
+output = double(zeros(h,w,3));
 for i = 1:imagesCount
     output(:,:,1) = output(:,:,1) + double(images{i}(:,:,1)) .* alphaChannel{i};
     output(:,:,2) = output(:,:,2) + double(images{i}(:,:,2)) .* alphaChannel{i};
