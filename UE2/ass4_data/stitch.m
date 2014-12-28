@@ -27,7 +27,7 @@ for i=1:imagesCount
    ac(h,:) = 1;
    ac(:,w) = 1;
    ac  =  bwdist(ac);
-   alphaChannel{i} =  ac ./ max(max(ac));
+   alphaChannel{i} =  ac ./ max(max(ac)); %normalize mask 
    images{i} = currentImage;
 end
 
@@ -164,28 +164,41 @@ end
 h = size(images{1},1); %Todo: adapt for different image sizes
 w = size(images{1},2); %Todo: adapt for different image sizes
 alphaChannelSum = zeros(h,w);
-for i = 1:h
-    for j = 1:w
+% for i = 1:h
+%     for j = 1:w
+%         for k = 1:(imagesCount)
+%             if(alphaChannel{k}(i,j) ~= 0)
+%                 
+%                 if(k ~= imagesCount)
+%                     if(alphaChannel{k+1}(i,j) == 0)
+%                         alphaChannel{k}(i,j) = 1;
+%                     end
+%                    
+%                 elseif(k ~= 1)
+%                     if(alphaChannel{k-1}(i,j) == 0)
+%                         alphaChannel{k}(i,j) = 1;
+%                     end
+%                 end 
+%                 
+%                 alphaChannelSum(i,j) = alphaChannelSum(i,j) + alphaChannel{k}(i,j);
+%                 
+%             end
+%         end
+%     end
+% end
+
         for k = 1:(imagesCount)
-            if(alphaChannel{k}(i,j) ~= 0)
-                
-                if(k ~= imagesCount)
-                    if(alphaChannel{k+1}(i,j) == 0)
-                        alphaChannel{k}(i,j) = 1;
-                    end
-                   
-                elseif(k ~= 1)
-                    if(alphaChannel{k-1}(i,j) == 0)
-                        alphaChannel{k}(i,j) = 1;
-                    end
-                end 
-                
-                alphaChannelSum(i,j) = alphaChannelSum(i,j) + alphaChannel{k}(i,j);
-                
-            end
+           
+          if(k ~= imagesCount)
+        
+             alphaChannel{k}(alphaChannel{k} ~= 0 & alphaChannel{k+1} == 0) = 1;
+                  
+          elseif(k ~= 1)
+             alphaChannel{k}(alphaChannel{k} ~= 0 & alphaChannel{k-1} == 0) = 1;
+          end 
+          alphaChannelSum = alphaChannelSum + alphaChannel{k};
+           
         end
-    end
-end
 
 output = double(zeros(h,w,3));
 for i = 1:imagesCount
