@@ -12,8 +12,10 @@ if imagesCount < 2
     return;
 end
 
-REF = floor(imagesCount / 2) + 1;
 
+
+
+REF = floor(imagesCount / 2) + 1;
 for i=1:imagesCount
    imageName = imagesList(i).name;
    currentImage = imread(strcat(dir_,imageName));
@@ -30,6 +32,10 @@ for i=1:imagesCount
    alphaChannel{i} =  ac ./ max(max(ac)); %normalize mask 
    images{i} = currentImage;
 end
+
+%for i=2:imagesCount %normalize image intensities
+ %   images{i} = imhistmatch(images{i},images{1},256);
+%end
 
     function stitchA()
         points = vl_sift(single(rgb2gray(images{1})));
