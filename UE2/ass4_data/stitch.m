@@ -4,7 +4,7 @@ N = 100;
 T = 5;
 dir_ = 'img_input/';
 
-imagesList = dir(strcat(dir_, name, '*'));      
+imagesList = dir(strcat(dir_, name, '*'));
 imagesCount = length(imagesList);
 
 if imagesCount < 2
@@ -17,24 +17,24 @@ end
 
 REF = floor(imagesCount / 2) + 1;
 for i=1:imagesCount
-   imageName = imagesList(i).name;
-   currentImage = imread(strcat(dir_,imageName));
-  
-   %alpha channel
-   h = size(currentImage,1);
-   w = size(currentImage,2);
-   ac = zeros(h, w);
-   ac(1,:) = 1;
-   ac(:,1) = 1;
-   ac(h,:) = 1;
-   ac(:,w) = 1;
-   ac  =  bwdist(ac);
-   alphaChannel{i} =  ac ./ max(max(ac)); %normalize mask 
-   images{i} = currentImage;
+    imageName = imagesList(i).name;
+    currentImage = imread(strcat(dir_,imageName));
+    
+    %alpha channel
+    h = size(currentImage,1);
+    w = size(currentImage,2);
+    ac = zeros(h, w);
+    ac(1,:) = 1;
+    ac(:,1) = 1;
+    ac(h,:) = 1;
+    ac(:,w) = 1;
+    ac  =  bwdist(ac);
+    alphaChannel{i} =  ac ./ max(max(ac)); %normalize mask
+    images{i} = currentImage;
 end
 
 %for i=2:imagesCount %normalize image intensities
- %   images{i} = imhistmatch(images{i},images{1},256);
+%   images{i} = imhistmatch(images{i},images{1},256);
 %end
 
     function stitchA()
@@ -100,15 +100,15 @@ end
 % make composite transformation matrices, if needed(more than 3 pics)
 if REF > 2
     curr = 2;
-     for i = 1:(REF-2)
-              H{REF-curr, REF} = maketform('composite', H{REF-curr+1, REF}, H{REF-curr, REF-curr+1});
-             
-              if (REF+curr) <= imagesCount
-                H{REF, REF+curr} = maketform('composite', H{REF, REF+curr-1}, H{REF+curr-1, REF+curr});
-              end
-              
-              curr = curr +1;
-     end
+    for i = 1:(REF-2)
+        H{REF-curr, REF} = maketform('composite', H{REF-curr+1, REF}, H{REF-curr, REF-curr+1});
+        
+        if (REF+curr) <= imagesCount
+            H{REF, REF+curr} = maketform('composite', H{REF, REF+curr-1}, H{REF+curr-1, REF+curr});
+        end
+        
+        curr = curr +1;
+    end
 end
 
 
@@ -153,16 +153,16 @@ end
 for i = 1:imagesCount
     
     if i<REF
-         images{i} = imtransform(images{i}, H{i, REF}, 'XData', [xMin xMax], 'YData', [yMin yMax], 'XYScale', [1 1]);
-         alphaChannel{i} = imtransform(alphaChannel{i}, H{i, REF}, 'XData', [xMin xMax], 'YData', [yMin yMax], 'XYScale', [1 1]);
+        images{i} = imtransform(images{i}, H{i, REF}, 'XData', [xMin xMax], 'YData', [yMin yMax], 'XYScale', [1 1]);
+        alphaChannel{i} = imtransform(alphaChannel{i}, H{i, REF}, 'XData', [xMin xMax], 'YData', [yMin yMax], 'XYScale', [1 1]);
     elseif i>REF
-         images{i} = imtransform(images{i}, H{REF, i}, 'XData', [xMin xMax], 'YData', [yMin yMax], 'XYScale', [1 1]);
-         alphaChannel{i} = imtransform(alphaChannel{i}, H{REF, i}, 'XData', [xMin xMax], 'YData', [yMin yMax], 'XYScale', [1 1]);
+        images{i} = imtransform(images{i}, H{REF, i}, 'XData', [xMin xMax], 'YData', [yMin yMax], 'XYScale', [1 1]);
+        alphaChannel{i} = imtransform(alphaChannel{i}, H{REF, i}, 'XData', [xMin xMax], 'YData', [yMin yMax], 'XYScale', [1 1]);
     else
         images{i} = imtransform(images{i},  maketform('projective',eye(3)), 'XData', [xMin xMax], 'YData', [yMin yMax], 'XYScale', [1 1]);
         alphaChannel{i} = imtransform(alphaChannel{i},  maketform('projective',eye(3)), 'XData', [xMin xMax], 'YData', [yMin yMax], 'XYScale', [1 1]);
     end
-
+    
 end
 
 %create final alpha mask
@@ -174,37 +174,37 @@ alphaChannelSum = zeros(h,w);
 %     for j = 1:w
 %         for k = 1:(imagesCount)
 %             if(alphaChannel{k}(i,j) ~= 0)
-%                 
+%
 %                 if(k ~= imagesCount)
 %                     if(alphaChannel{k+1}(i,j) == 0)
 %                         alphaChannel{k}(i,j) = 1;
 %                     end
-%                    
+%
 %                 elseif(k ~= 1)
 %                     if(alphaChannel{k-1}(i,j) == 0)
 %                         alphaChannel{k}(i,j) = 1;
 %                     end
-%                 end 
-%                 
+%                 end
+%
 %                 alphaChannelSum(i,j) = alphaChannelSum(i,j) + alphaChannel{k}(i,j);
-%                 
+%
 %             end
 %         end
 %     end
 % end
 
-        for k = 1:(imagesCount)
-           
-          if(k ~= imagesCount)
+for k = 1:(imagesCount)
+    
+    if(k ~= imagesCount)
         
-             alphaChannel{k}(alphaChannel{k} ~= 0 & alphaChannel{k+1} == 0) = 1;
-                  
-          elseif(k ~= 1)
-             alphaChannel{k}(alphaChannel{k} ~= 0 & alphaChannel{k-1} == 0) = 1;
-          end 
-          alphaChannelSum = alphaChannelSum + alphaChannel{k};
-           
-        end
+        alphaChannel{k}(alphaChannel{k} ~= 0 & alphaChannel{k+1} == 0) = 1;
+        
+    elseif(k ~= 1)
+        alphaChannel{k}(alphaChannel{k} ~= 0 & alphaChannel{k-1} == 0) = 1;
+    end
+    alphaChannelSum = alphaChannelSum + alphaChannel{k};
+    
+end
 
 output = double(zeros(h,w,3));
 for i = 1:imagesCount
@@ -216,7 +216,7 @@ end
 output(:,:,1) = output(:,:,1) ./ alphaChannelSum;
 output(:,:,2) = output(:,:,2) ./ alphaChannelSum;
 output(:,:,3) = output(:,:,3) ./ alphaChannelSum;
-       
+
 figure;imshow(uint8(output));
 
 
