@@ -12,13 +12,14 @@ if imagesCount < 2
     return;
 end
 
-
+%%weil nicht genug arbeitsspeicher
+imagesCount =9;
 
 
 REF = floor(imagesCount / 2) + 1;
 for i=1:imagesCount
    imageName = imagesList(i).name;
-   currentImage = imread(strcat(dir_,imageName));
+   currentImage = cylinder_projection(imread(strcat(dir_,imageName)),700,0,0);
   
    %alpha channel
    h = size(currentImage,1);
