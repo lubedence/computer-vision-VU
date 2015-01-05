@@ -2,8 +2,8 @@ function stitch( name )
 
 N = 100;
 T = 5;
+fadingBorder= 30;
 dir_ = 'img_input/';
-
 imagesList = dir(strcat(dir_, name, '*'));
 imagesCount = length(imagesList);
 
@@ -24,10 +24,10 @@ for i=1:imagesCount
     h = size(currentImage,1);
     w = size(currentImage,2);
     ac = zeros(h, w);
-    ac(1,:) = 1;
-    ac(:,1) = 1;
-    ac(h,:) = 1;
-    ac(:,w) = 1;
+    ac(1:fadingBorder,:) = 1;
+    ac(:,1:fadingBorder) = 1;
+    ac((h-fadingBorder):h,:) = 1;
+    ac(:,(w-fadingBorder):w) = 1;
     ac  =  bwdist(ac);
     alphaChannel{i} =  ac ./ max(max(ac)); %normalize mask
     images{i} = currentImage;
@@ -194,16 +194,7 @@ alphaChannelSum = zeros(h,w);
 % end
 
 for k = 1:(imagesCount)
-    
-    if(k ~= imagesCount)
-        
-        alphaChannel{k}(alphaChannel{k} ~= 0 & alphaChannel{k+1} == 0) = 1;
-        
-    elseif(k ~= 1)
-        alphaChannel{k}(alphaChannel{k} ~= 0 & alphaChannel{k-1} == 0) = 1;
-    end
-    alphaChannelSum = alphaChannelSum + alphaChannel{k};
-    
+        alphaChannelSum = alphaChannelSum + alphaChannel{k};
 end
 
 output = double(zeros(h,w,3));
