@@ -14,18 +14,12 @@ for i = 1:length(filepaths)
     I = im2single(imread(filepaths{i}.Path));
     group(i) = filepaths{i}.Class;
     
-    % find words
-    [~, descrs] = vl_dsift(I, 'Step', STEPSIZE, 'Fast');
-    nearest_words = knnsearch(C', single(descrs'));
-    % make histogram
-    training(i,:) = histc(nearest_words, 1:NUM_WORDS);
-    % normalize histogram
-    training(i,:) = training(i,:) / max(training(i,:));
+    training(i,:) = ImageWordHistogram(I, C, STEPSIZE, NUM_WORDS);
     
     waitbar(i / NUM_IMAGES);
 end
 
-fprintf('feature representations complete!\n\n');
+fprintf('feature representations complete!\n');
 close(wb_handle);
 
 end

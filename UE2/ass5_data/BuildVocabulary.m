@@ -23,7 +23,7 @@ end
 fprintf('k-means...\n');
 [C, ~] = vl_kmeans(single(descrs_overall), num_clusters);
 
-fprintf('vocabulary complete!\n\n');
+fprintf('vocabulary complete!\n');
 close(wb_handle);
 
 end
