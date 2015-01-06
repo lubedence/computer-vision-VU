@@ -193,15 +193,13 @@ alphaChannelSum = zeros(h,w);
 %     end
 % end
 
-for k = 1:(imagesCount)
-        alphaChannelSum = alphaChannelSum + alphaChannel{k};
-end
-
 output = double(zeros(h,w,3));
 for i = 1:imagesCount
     output(:,:,1) = output(:,:,1) + double(images{i}(:,:,1)) .* alphaChannel{i};
     output(:,:,2) = output(:,:,2) + double(images{i}(:,:,2)) .* alphaChannel{i};
     output(:,:,3) = output(:,:,3) + double(images{i}(:,:,3)) .* alphaChannel{i};
+    
+    alphaChannelSum = alphaChannelSum + alphaChannel{i};
 end
 
 output(:,:,1) = output(:,:,1) ./ alphaChannelSum;
