@@ -166,32 +166,9 @@ for i = 1:imagesCount
 end
 
 %create final alpha mask
-%todo: it's very slow...
 h = size(images{1},1); %Todo: adapt for different image sizes
 w = size(images{1},2); %Todo: adapt for different image sizes
 alphaChannelSum = zeros(h,w);
-% for i = 1:h
-%     for j = 1:w
-%         for k = 1:(imagesCount)
-%             if(alphaChannel{k}(i,j) ~= 0)
-%
-%                 if(k ~= imagesCount)
-%                     if(alphaChannel{k+1}(i,j) == 0)
-%                         alphaChannel{k}(i,j) = 1;
-%                     end
-%
-%                 elseif(k ~= 1)
-%                     if(alphaChannel{k-1}(i,j) == 0)
-%                         alphaChannel{k}(i,j) = 1;
-%                     end
-%                 end
-%
-%                 alphaChannelSum(i,j) = alphaChannelSum(i,j) + alphaChannel{k}(i,j);
-%
-%             end
-%         end
-%     end
-% end
 
 output = double(zeros(h,w,3));
 for i = 1:imagesCount
