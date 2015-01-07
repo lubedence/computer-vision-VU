@@ -4,6 +4,7 @@ function [paths] = ImagePaths(folder)
 
 paths = {};
 k = 1;
+class = 1;
 
 dir_info = dir(folder);
 for i = 1:length(dir_info)
@@ -20,10 +21,12 @@ for i = 1:length(dir_info)
 
         filepath = sprintf('%s/%s', subfolder, subdir_info(j).name);
         paths{k}.Path = filepath;
-        paths{k}.Class = i;
+        paths{k}.Class = class;
         %paths{k}.ClassName = dir_info(i).name;
         k = k + 1;
     end
+    
+    class = class + 1;
 end
 
 end
