@@ -1,48 +1,48 @@
 function stitch( name )
 
-N = 100;
-T = 5;
-fadingBorder= 30;
-dir_ = 'img_input/';
-imagesList = dir(strcat(dir_, name, '*'));
-imagesCount = length(imagesList);
+    N = 100; %loop, RANSAC
+    T = 5; %threshold for inliers, RANSAC
+    fadingBorder= 30; %for blending
+    dir_ = 'img_input/';
+    imagesList = dir(strcat(dir_, name, '*'));
+    imagesCount = length(imagesList);
 
-if imagesCount < 2
-    disp('problem reading images.');
-    return;
-end
+    if imagesCount < 2
+        disp('problem reading images.');
+        return;
+    end
 
+    REF = floor(imagesCount / 2) + 1; %reference image
 
+    %read images and create feathering mask
+    for i=1:imagesCount
+        imageName = imagesList(i).name;
+        currentImage = imread(strcat(dir_,imageName));
+        images{i} = currentImage;
 
+        %cylinder projection
+        %currentImage = cylinder_projection(imread(strcat(dir_,imageName)),700,0,0);
 
-REF = floor(imagesCount / 2) + 1;
-for i=1:imagesCount
-    imageName = imagesList(i).name;
-    %currentImage = imread(strcat(dir_,imageName));
-    currentImage = cylinder_projection(imread(strcat(dir_,imageName)),700,0,0);
-    %alpha channel
-    h = size(currentImage,1);
-    w = size(currentImage,2);
-    ac = zeros(h, w);
-    ac(1:fadingBorder,:) = 1;
-    ac(:,1:fadingBorder) = 1;
-    ac((h-fadingBorder):h,:) = 1;
-    ac(:,(w-fadingBorder):w) = 1;
-    ac  =  bwdist(ac);
-    alphaChannel{i} =  ac ./ max(max(ac)); %normalize mask
-    images{i} = currentImage;
-end
+        %alpha channel
+        h = size(currentImage,1);
+        w = size(currentImage,2);
+        ac = zeros(h, w);
+        ac(1:fadingBorder,:) = 1;
+        ac(:,1:fadingBorder) = 1;
+        ac((h-fadingBorder):h,:) = 1;
+        ac(:,(w-fadingBorder):w) = 1;
+        ac  =  bwdist(ac);
+        alphaChannel{i} =  ac ./ max(max(ac)); %normalize mask
+    end
 
-%for i=2:imagesCount %normalize image intensities
-%   images{i} = imhistmatch(images{i},images{1},256);
-%end
-
+    %just for the theoretical part
     function stitchA()
         points = vl_sift(single(rgb2gray(images{1})));
         imshow(images{1});
         vl_plotframe(points);
     end
 
+    %returns transformation matrix, homography between img1 and img2
     function [t] = imreg(img1, img2)
         [pointsImg1, descImg1] = vl_sift(single(rgb2gray(img1)));
         [pointsImg2, descImg2] = vl_sift(single(rgb2gray(img2)));
@@ -50,9 +50,10 @@ end
         points1 = pointsImg1(1:2, matches(1,:));
         points2 = pointsImg2(1:2, matches(2,:));
         
-        %visualize
+        %visualize all
         %match_plot(im2double(img1), im2double(img2), points1', points2');
         
+        %perform RANSAC
         best_inliers_ind = [];
         for n = 1:N
             rs = randsample(size(matches, 2), 4);
@@ -72,11 +73,21 @@ end
             end
         end
         
+        %visualize inliers
+        %match_plot(im2double(img1), im2double(img2), points1(:, best_inliers_ind)', points2(:, best_inliers_ind)');
+        
+        %create and return projective transformation matrix
         t = cp2tform(points1(:, best_inliers_ind)', points2(:, best_inliers_ind)', 'projective');
         
+        
+        %just some output for the theoretical part
+        
         %B = imtransform(img1, t, 'XData', [1 size(img2,2)], 'YData', [1 size(img2,1)], 'XYScale', [1 1]);
+        %figure; imshow(img2);
         %B(B == 0) = img2(B == 0);
         %figure; imshow(B);
+        %K = imabsdiff(B,img2);
+        %figure; imshow(K,[]);
     end
 
 %just for the theoretical part
@@ -85,19 +96,21 @@ end
 
 
 
-% stitching
-
+%create transformation matrices for neighbours
 for i = 1:(imagesCount - 1)
     left = images{i};
     right = images{i + 1};
     if i<REF
         H{i, i+1} = imreg(left, right);
     else
+        %mirroring projection if images are on the right side of the ref.
+        %image
         H{i, i+1} = fliptform(imreg(left, right));
     end
 end
 
-% make composite transformation matrices, if needed(more than 3 pics)
+% calc composite transformation matrices. needed if there are more than 3
+% images
 if REF > 2
     curr = 2;
     for i = 1:(REF-2)
@@ -125,7 +138,7 @@ for i = 1:imagesCount
     if i<REF
         outbounds = findbounds(H{i, REF},[1 height; width 1]);
     elseif i>REF
-        outbounds = findbounds(H{REF, i},[1 height;width 1]);
+        outbounds = findbounds(H{REF, i},[1 height; width 1]);
     else
         continue;
     end
@@ -159,15 +172,16 @@ for i = 1:imagesCount
         images{i} = imtransform(images{i}, H{REF, i}, 'XData', [xMin xMax], 'YData', [yMin yMax], 'XYScale', [1 1]);
         alphaChannel{i} = imtransform(alphaChannel{i}, H{REF, i}, 'XData', [xMin xMax], 'YData', [yMin yMax], 'XYScale', [1 1]);
     else
+        %no transformation, just for having the same output panorama-size
         images{i} = imtransform(images{i},  maketform('projective',eye(3)), 'XData', [xMin xMax], 'YData', [yMin yMax], 'XYScale', [1 1]);
         alphaChannel{i} = imtransform(alphaChannel{i},  maketform('projective',eye(3)), 'XData', [xMin xMax], 'YData', [yMin yMax], 'XYScale', [1 1]);
     end
     
 end
 
-%create final alpha mask
-h = size(images{1},1); %Todo: adapt for different image sizes
-w = size(images{1},2); %Todo: adapt for different image sizes
+%create final alpha mask and combine images to one final panorama
+h = size(images{1},1);
+w = size(images{1},2);
 alphaChannelSum = zeros(h,w);
 
 output = double(zeros(h,w,3));
