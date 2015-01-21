@@ -15,7 +15,7 @@ for i = 1:length(dir_info)
     subfolder = sprintf('%s/%s', folder, dir_info(i).name);
     subdir_info = dir(subfolder);
     for j = 1:length(subdir_info)
-        if subdir_info(j).name(1) == '.'
+        if subdir_info(j).name(1) == '.' || strcmp(subdir_info(j).name, 'foo.txt')
             continue;
         end
 

@@ -1,12 +1,12 @@
 function [training, group] = BuildKNN(folder, C)
 
 STEPSIZE = 2;
-NUM_IMAGES = 800;
 NUM_WORDS = size(C,2); % same as NUM_CLUSTERS in BuildVocabulary
 
+filepaths = ImagePaths(folder);
+NUM_IMAGES = length(filepaths);
 training = zeros(NUM_IMAGES, NUM_WORDS);
 group = zeros(NUM_IMAGES, 1);
-filepaths = ImagePaths(folder);
 
 wb_handle = waitbar(0, 'Building Feature Representations...');
 

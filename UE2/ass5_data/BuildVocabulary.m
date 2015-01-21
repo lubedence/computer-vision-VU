@@ -1,11 +1,11 @@
 function [C] = BuildVocabulary(folder, num_clusters)
 
 NUM_FEATURES = 100; % approx. number of sift features per image
-NUM_IMAGES = 800;
 
+filepaths = ImagePaths(folder);
+NUM_IMAGES = length(filepaths);
 descrs_overall = zeros(128, NUM_FEATURES * NUM_IMAGES);
 current_index = 1;
-filepaths = ImagePaths(folder);
 
 wb_handle = waitbar(0, 'Building Vocabulary...');
 
