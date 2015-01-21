@@ -1,102 +1,103 @@
 function stitch( name )
 
-    N = 100; %loop, RANSAC
-    T = 5; %threshold for inliers, RANSAC
-    fadingBorder= 30; %for blending
-    dir_ = 'img_input/';
-    imagesList = dir(strcat(dir_, name, '*'));
-    imagesCount = length(imagesList);
+tic;
+N = 100; %loop, RANSAC
+T = 5; %threshold for inliers, RANSAC
+fadingBorder= 30; %for blending
+dir_ = 'img_input/';
+imagesList = dir(strcat(dir_, name, '*'));
+imagesCount = length(imagesList);
 
-    if imagesCount < 2
-        disp('problem reading images.');
-        return;
-    end
+if imagesCount < 2
+    disp('problem reading images.');
+    return;
+end
 
-    REF = floor(imagesCount / 2) + 1; %reference image
+REF = floor(imagesCount / 2) + 1; %reference image
 
-    %read images and create feathering mask
-    for i=1:imagesCount
-        imageName = imagesList(i).name;
-        currentImage = imread(strcat(dir_,imageName));
-        images{i} = currentImage;
+%read images and create feathering mask
+debug_print('read images and create feathering mask');
+for i=1:imagesCount
+    imageName = imagesList(i).name;
+    currentImage = imread(strcat(dir_,imageName));
+    images{i} = currentImage;
 
-        %cylinder projection
-        %currentImage = cylinder_projection(imread(strcat(dir_,imageName)),700,0,0);
+    %cylinder projection
+    %currentImage = cylinder_projection(imread(strcat(dir_,imageName)),700,0,0);
 
-        %alpha channel
-        h = size(currentImage,1);
-        w = size(currentImage,2);
-        ac = zeros(h, w);
-        ac(1:fadingBorder,:) = 1;
-        ac(:,1:fadingBorder) = 1;
-        ac((h-fadingBorder):h,:) = 1;
-        ac(:,(w-fadingBorder):w) = 1;
-        ac  =  bwdist(ac);
-        alphaChannel{i} =  ac ./ max(max(ac)); %normalize mask
-    end
+    %alpha channel
+    h = size(currentImage,1);
+    w = size(currentImage,2);
+    ac = zeros(h, w);
+    ac(1:fadingBorder,:) = 1;
+    ac(:,1:fadingBorder) = 1;
+    ac((h-fadingBorder):h,:) = 1;
+    ac(:,(w-fadingBorder):w) = 1;
+    ac  =  bwdist(ac);
+    alphaChannel{i} =  ac ./ max(max(ac)); %normalize mask
+end
 
-    %just for the theoretical part
-    function stitchA()
-        points = vl_sift(single(rgb2gray(images{1})));
-        imshow(images{1});
-        vl_plotframe(points);
-    end
+%just for the theoretical part
+function stitchA()
+    points = vl_sift(single(rgb2gray(images{1})));
+    imshow(images{1});
+    vl_plotframe(points);
+end
 
-    %returns transformation matrix, homography between img1 and img2
-    function [t] = imreg(img1, img2)
-        [pointsImg1, descImg1] = vl_sift(single(rgb2gray(img1)));
-        [pointsImg2, descImg2] = vl_sift(single(rgb2gray(img2)));
-        matches = vl_ubcmatch(descImg1, descImg2);
-        points1 = pointsImg1(1:2, matches(1,:));
-        points2 = pointsImg2(1:2, matches(2,:));
-        
-        %visualize all
-        %match_plot(im2double(img1), im2double(img2), points1', points2');
-        
-        %perform RANSAC
-        best_inliers_ind = [];
-        for n = 1:N
-            rs = randsample(size(matches, 2), 4);
-            try
-                t = cp2tform(points1(:, rs)', points2(:, rs)', 'projective');
-            catch ex
-                disp(ex.message);
-                continue;
-            end
-            [X, Y] = tformfwd(t, points1(1, :), points1(2, :));
-            points1_t = [X; Y];
-            diffs = points1_t - points2(1:2, :);
-            dists = sqrt(sum(diffs.^2));
-            inliers_ind = dists < T;
-            if sum(inliers_ind) > sum(best_inliers_ind)
-                best_inliers_ind = inliers_ind;
-            end
+%returns transformation matrix, homography between img1 and img2
+function [t] = imreg(img1, img2)
+    [pointsImg1, descImg1] = vl_sift(single(rgb2gray(img1)));
+    [pointsImg2, descImg2] = vl_sift(single(rgb2gray(img2)));
+    matches = vl_ubcmatch(descImg1, descImg2);
+    points1 = pointsImg1(1:2, matches(1,:));
+    points2 = pointsImg2(1:2, matches(2,:));
+
+    %visualize all
+    %match_plot(im2double(img1), im2double(img2), points1', points2');
+
+    %perform RANSAC
+    best_inliers_ind = [];
+    for n = 1:N
+        rs = randsample(size(matches, 2), 4);
+        try
+            t = cp2tform(points1(:, rs)', points2(:, rs)', 'projective');
+        catch ex
+            disp(ex.message);
+            continue;
         end
-        
-        %visualize inliers
-        %match_plot(im2double(img1), im2double(img2), points1(:, best_inliers_ind)', points2(:, best_inliers_ind)');
-        
-        %create and return projective transformation matrix
-        t = cp2tform(points1(:, best_inliers_ind)', points2(:, best_inliers_ind)', 'projective');
-        
-        
-        %just some output for the theoretical part
-        
-        %B = imtransform(img1, t, 'XData', [1 size(img2,2)], 'YData', [1 size(img2,1)], 'XYScale', [1 1]);
-        %figure; imshow(img2);
-        %B(B == 0) = img2(B == 0);
-        %figure; imshow(B);
-        %K = imabsdiff(B,img2);
-        %figure; imshow(K,[]);
+        [X, Y] = tformfwd(t, points1(1, :), points1(2, :));
+        points1_t = [X; Y];
+        diffs = points1_t - points2(1:2, :);
+        dists = sqrt(sum(diffs.^2));
+        inliers_ind = dists < T;
+        if sum(inliers_ind) > sum(best_inliers_ind)
+            best_inliers_ind = inliers_ind;
+        end
     end
+
+    %visualize inliers
+    %match_plot(im2double(img1), im2double(img2), points1(:, best_inliers_ind)', points2(:, best_inliers_ind)');
+
+    %create and return projective transformation matrix
+    t = cp2tform(points1(:, best_inliers_ind)', points2(:, best_inliers_ind)', 'projective');
+
+
+    %just some output for the theoretical part
+
+    %B = imtransform(img1, t, 'XData', [1 size(img2,2)], 'YData', [1 size(img2,1)], 'XYScale', [1 1]);
+    %figure; imshow(img2);
+    %B(B == 0) = img2(B == 0);
+    %figure; imshow(B);
+    %K = imabsdiff(B,img2);
+    %figure; imshow(K,[]);
+end
 
 %just for the theoretical part
 %stitchA();
 %imreg(images{1}, images{2});
 
-
-
 %create transformation matrices for neighbours
+debug_print('create transformation matrices for neighbours');
 for i = 1:(imagesCount - 1)
     left = images{i};
     right = images{i + 1};
@@ -111,6 +112,7 @@ end
 
 % calc composite transformation matrices. needed if there are more than 3
 % images
+debug_print('calc composite transformation matrices');
 if REF > 2
     curr = 2;
     for i = 1:(REF-2)
@@ -126,6 +128,7 @@ end
 
 
 % estimate final panorama size
+debug_print('estimate final panorama size');
 xMin = 1;
 yMin = 1;
 xMax = size(images{REF}, 2);
@@ -163,6 +166,7 @@ end
 
 
 %transform images
+debug_print('transform images');
 for i = 1:imagesCount
     
     if i<REF
@@ -180,6 +184,7 @@ for i = 1:imagesCount
 end
 
 %create final alpha mask and combine images to one final panorama
+debug_print('create final alpha mask and combine images to one final panorama');
 h = size(images{1},1);
 w = size(images{1},2);
 alphaChannelSum = zeros(h,w);
@@ -198,6 +203,13 @@ output(:,:,2) = output(:,:,2) ./ alphaChannelSum;
 output(:,:,3) = output(:,:,3) ./ alphaChannelSum;
 
 figure;imshow(uint8(output));
+end
 
-
+function debug_print(msg)
+    try
+        toc;
+    catch
+        % first toc
+    end
+    disp(msg); tic;
 end
