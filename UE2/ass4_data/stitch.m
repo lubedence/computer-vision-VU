@@ -20,10 +20,10 @@ debug_print('read images and create feathering mask');
 for i=1:imagesCount
     imageName = imagesList(i).name;
     currentImage = imread(strcat(dir_,imageName));
-    images{i} = currentImage;
-
+    
     %cylinder projection
-    %currentImage = cylinder_projection(imread(strcat(dir_,imageName)),700,0,0);
+    currentImage = cylinder_projection(imread(strcat(dir_,imageName)),700,0,0);
+    images{i} = currentImage;
 
     %alpha channel
     h = size(currentImage,1);
